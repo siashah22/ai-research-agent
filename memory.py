@@ -50,19 +50,19 @@ def save_research(vectorstore, query:str, summary:str):
     print(f"Research on '{query}' saved to memory.")
     
 # RETRIEVE RELATED PAST RESEARCH
-def retrieve_related(vectorstore, query: str, k: int=3)->str:
-    """Find the k most relevant past research sessions for a given query."""
-    docs = vectorstore.similarity_search(query, k=k)
-    relevant = [d for d in docs if d.metadata.get("query") != "init"]
+def retrieve_related(vectorstore, query: str, k: int=3, threshold: float=0.3)->str:
+    """Find the relevant past research - only return if similarity is high enough"""
+    docs_and_score = vectorstore.similarity_search_with_score(query, k=k)
+    relevant = [
+        doc for doc,score in docs_and_score
+        if doc.metadata.get("query") != "init" and score < threshold]
     
     if not relevant:
         return ""
     
     print(f"Found {len(relevant)} relevant memory(s) for: '{query}'\n")
-    results=[]
-    for doc in relevant:
-        results.append(doc.page_content)
-    return "\n\n---\n\n".join(results)
+    
+    return "\n\n---\n\n".join([doc.page_content for doc in relevant])
 
 if __name__ == "__main__":
     vs=load_memory()
