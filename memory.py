@@ -50,7 +50,7 @@ def save_research(vectorstore, query:str, summary:str):
     print(f"Research on '{query}' saved to memory.")
     
 # RETRIEVE RELATED PAST RESEARCH
-def retrieve_related(vectorstore, query: str, k: int=3, threshold: float=0.5)->str:
+def retrieve_related(vectorstore, query: str, k: int=3, threshold: float=0.6)->str:
     """Find the relevant past research - only return if similarity is high enough"""
     docs_and_score = vectorstore.similarity_search_with_score(query, k=k)
     relevant = [
