@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Research Agent</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .header {
+    text-align: center;
+    padding: 1rem 0 0.5rem;
+  }
+
+  .header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #f8fafc;
+    letter-spacing: -0.02em;
+  }
+
+  .header p {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-top: 0.4rem;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: #1e3a5f;
+    color: #60a5fa;
+    border: 1px solid #1d4ed8;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .search-box {
+    background: #1a1d27;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .search-box textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e2e8f0;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: none;
+    min-height: 60px;
+    line-height: 1.6;
+  }
+
+  .search-box textarea::placeholder { color: #4a5568; }
+
+  .search-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #2d3748;
+    padding-top: 0.75rem;
+  }
+
+  .memory-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #4a5568;
+  }
+
+  .memory-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4a5568;
+    transition: background 0.3s;
+  }
+
+  .memory-dot.active { background: #10b981; }
+
+  .btn-research {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    font-family: inherit;
+  }
+
+  .btn-research:hover { background: #1d4ed8; }
+  .btn-research:active { transform: scale(0.97); }
+  .btn-research:disabled { background: #1e3a5f; color: #4a5568; cursor: not-allowed; }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+    color: #4a5568;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #1a1d27;
+    border: 1px solid #2d3748;
+    transition: all 0.2s;
+  }
+
+  .step.active {
+    color: #60a5fa;
+    border-color: #1d4ed8;
+    background: #1e3a5f22;
+  }
+
+  .step.done {
+    color: #10b981;
+    border-color: #065f46;
+    background: #06503422;
+  }
+
+  .step-icon {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .result-card {
+    background: #1a1d27;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #2d3748;
+    background: #151720;
+  }
+
+  .result-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #94a3b8;
+  }
+
+  .result-header-left .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+  }
+
+  .memory-tag {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #065f4622;
+    color: #10b981;
+    border: 1px solid #065f46;
+  }
+
+  .result-body {
+    padding: 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+  }
+
+  .result-body h3 {
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.4rem;
+  }
+
+  .result-body strong { color: #e2e8f0; }
+
+  .result-body ul {
+    padding-left: 1.2rem;
+    margin: 0.4rem 0;
+  }
+
+  .result-body li { margin-bottom: 0.3rem; }
+
+  .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid #2d3748;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    color: #64748b;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover { border-color: #4a5568; color: #94a3b8; }
+
+  .error-card {
+    background: #1f1315;
+    border: 1px solid #7f1d1d;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    color: #fca5a5;
+    display: none;
+  }
+
+  .footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #2d3748;
+    padding-top: 0.5rem;
+  }
+
+  .footer a { color: #3b5998; text-decoration: none; }
+  .footer a:hover { color: #60a5fa; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <span class="badge">⚡ Powered by Qwen3 + LangChain</span>
+    <h1>AI Research Agent</h1>
+    <p>Ask anything. The agent searches the web, remembers past research, and synthesizes a structured summary.</p>
+  </div>
+
+  <div class="search-box">
+    <textarea id="query" placeholder="What do you want to research? e.g. 'latest developments in AI agents 2025'" rows="3"></textarea>
+    <div class="search-footer">
+      <div class="memory-indicator">
+        <div class="memory-dot" id="memoryDot"></div>
+        <span id="memoryLabel">Memory ready</span>
+      </div>
+      <button class="btn-research" id="researchBtn" onclick="runResearch()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Research</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="steps" id="steps" style="display:none;">
+    <div class="step" id="step1">
+      <span class="step-icon">🔍</span>
+      <span>Checking memory for related past research...</span>
+    </div>
+    <div class="step" id="step2">
+      <span class="step-icon">🌐</span>
+      <span id="step2text">Searching the web...</span>
+    </div>
+    <div class="step" id="step3">
+      <span class="step-icon">🧠</span>
+      <span>Synthesizing findings into structured summary...</span>
+    </div>
+    <div class="step" id="step4">
+      <span class="step-icon">💾</span>
+      <span>Saving to memory for future sessions...</span>
+    </div>
+  </div>
+
+  <div class="error-card" id="errorCard">
+    <strong>Error:</strong> <span id="errorMsg"></span>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <div class="result-header-left">
+        <div class="dot"></div>
+        <span id="resultLabel">Research complete</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span class="memory-tag" id="memoryUsedTag" style="display:none;">🧠 Used memory</span>
+        <button class="copy-btn" onclick="copyResult()">📋 Copy</button>
+      </div>
+    </div>
+    <div class="result-body" id="resultBody"></div>
+  </div>
+
+  <div class="footer">
+    Built by <a href="https://github.com/siashah22" target="_blank">Sia Shah</a> &nbsp;·&nbsp;
+    <a href="/docs" target="_blank">API Docs</a>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = '';
+
+let isLoading = false;
+
+async function animateSteps(usedMemory) {
+  const steps = ['step1','step2','step3','step4'];
+  const delays = [0, 800, 2500, 4500];
+
+  for (let i = 0; i < steps.length; i++) {
+    await new Promise(r => setTimeout(r, i === 0 ? 0 : delays[i] - delays[i-1]));
+    const el = document.getElementById(steps[i]);
+    el.classList.add('active');
+    if (i > 0) {
+      document.getElementById(steps[i-1]).classList.remove('active');
+      document.getElementById(steps[i-1]).classList.add('done');
+    }
+  }
+}
+
+function formatResult(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #2d3748;margin:0.8rem 0;">')
+    .replace(/^\* (.+)$/gm, '• $1')
+    .replace(/^- (.+)$/gm, '• $1');
+}
+
+async function runResearch() {
+  const query = document.getElementById('query').value.trim();
+  if (!query || isLoading) return;
+
+  isLoading = true;
+
+  const btn = document.getElementById('researchBtn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btnText');
+  const stepsEl = document.getElementById('steps');
+  const resultCard = document.getElementById('resultCard');
+  const errorCard = document.getElementById('errorCard');
+  const memoryDot = document.getElementById('memoryDot');
+  const memoryLabel = document.getElementById('memoryLabel');
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Researching...';
+  resultCard.style.display = 'none';
+  errorCard.style.display = 'none';
+  stepsEl.style.display = 'flex';
+
+  ['step1','step2','step3','step4'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+  });
+
+  memoryDot.classList.remove('active');
+  memoryLabel.textContent = 'Checking memory...';
+
+  animateSteps();
+
+  try {
+    const res = await fetch(`${API_BASE}/research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Something went wrong');
+    }
+
+    const data = await res.json();
+
+    ['step1','step2','step3','step4'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('active');
+      el.classList.add('done');
+    });
+
+    memoryDot.classList.add('active');
+    memoryLabel.textContent = 'Memory updated';
+
+    document.getElementById('resultBody').innerHTML = formatResult(data.summary);
+    document.getElementById('resultLabel').textContent = `Research complete · "${query.slice(0, 50)}${query.length > 50 ? '...' : ''}"`;
+
+    const memoryUsedTag = document.getElementById('memoryUsedTag');
+    memoryUsedTag.style.display = data.used_memory ? 'inline-block' : 'none';
+
+    resultCard.style.display = 'block';
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  } catch (err) {
+    document.getElementById('errorMsg').textContent = err.message;
+    errorCard.style.display = 'block';
+    stepsEl.style.display = 'none';
+  } finally {
+    isLoading = false;
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = 'Research';
+  }
+}
+
+document.getElementById('query').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runResearch();
+});
+
+function copyResult() {
+  const text = document.getElementById('resultBody').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
+  });
+}
+</script>
+</body>
+</html>

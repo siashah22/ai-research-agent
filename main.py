@@ -1,3 +1,5 @@
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -10,6 +12,7 @@ app = FastAPI(
     description = "An agentic research assistant with persistant memory",
     version = "1.0.0"
 )
+
 
 # REQUEST / RESPONSE MODELS
 class ResearchRequest(BaseModel):
@@ -25,9 +28,9 @@ class MemoryResponse(BaseModel):
     related_research: str
     
 # ROUTES
-@app.get("/")
-def root():
-    return {"status": "running", "message": "AI Research Agent is live"}
+@app.get("/",include_in_schema=False)
+def frontend():
+    return FileResponse("static/index.html")
 
 @app.post("/research", response_model=ResearchResponse)
 def research(request: ResearchRequest):
