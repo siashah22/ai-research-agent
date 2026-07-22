@@ -8,7 +8,7 @@ load_dotenv()
 vectorstore = load_memory()
 # THE BRAIN 
 llm = ChatGroq(
-    model="qwen/qwen3-32b",
+    model="openai/gpt-oss-120b",
     temperature=0,
 ).bind_tools(tools)
 
